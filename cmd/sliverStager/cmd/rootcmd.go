@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Esonhugh/sliver-linux-tcp-stager-helper/pkg/sliverClient"
+	"github.com/Esonhugh/sliver-stage-helper/pkg/sliverClient"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -13,10 +13,6 @@ var (
 	Opts = struct {
 		Verbose        int
 		ConfigFilePath string
-		StagerType     string
-		ListenerURL    string
-		Advanced       string
-		Format         string
 	}{}
 	Client *sliverClient.Client
 )
@@ -24,10 +20,6 @@ var (
 func init() {
 	RootCmd.PersistentFlags().IntVarP(&Opts.Verbose, "verbose", "v", 0, "verbose level (-v debug | -vv trace)")
 	RootCmd.PersistentFlags().StringVarP(&Opts.ConfigFilePath, "config", "c", "~/.sliver", "config file path")
-	RootCmd.PersistentFlags().StringVarP(&Opts.StagerType, "stager-type", "t", "linux-x64-tcp", "stager type: linux-x64-tcp")
-	RootCmd.PersistentFlags().StringVarP(&Opts.ListenerURL, "url", "u", "tcp://127.1:4444", "listener url, like tcp://127.0.0.1:4444")
-	RootCmd.PersistentFlags().StringVarP(&Opts.Format, "format", "f", "raw", "format")
-	RootCmd.PersistentFlags().StringVarP(&Opts.Advanced, "advanced", "a", "", "advanced options")
 }
 
 var RootCmd = &cobra.Command{

