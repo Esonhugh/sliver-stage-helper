@@ -11,7 +11,7 @@ import (
 //go:embed Stage2.asm
 var TemplateStr string
 
-func GenerateLinuxShellcodeFromBytes(payload []byte) ([]byte, error) {
+func GenerateLinuxX64ShellcodeFromBytes(payload []byte) ([]byte, error) {
 	// 初始化 Keystone，选择架构和模式（例如 x86 32位）
 	ks, err := keystone.New(keystone.ARCH_X86, keystone.MODE_64)
 	if err != nil {
@@ -33,10 +33,10 @@ func GenerateLinuxShellcodeFromBytes(payload []byte) ([]byte, error) {
 	}
 
 	// 输出机器码的十六进制表示
-	log.Infof("payload_len: %v(%x)", payload_len, payload_len)
-	log.Infof("payload_prefix: %v(%x)", payload[:10], payload[:10])
-	log.Infof("payload stage2 payload: %x", insn)
-	log.Infof("len of pre-payload payload: %v", len(insn))
+	log.Tracef("payload_len: %v(%x)", payload_len, payload_len)
+	log.Tracef("payload_prefix: %v(%x)", payload[:10], payload[:10])
+	log.Tracef("payload stage2 payload: %x", insn)
+	log.Tracef("len of pre-payload payload: %v", len(insn))
 
 	return MergeBytes(insn, payload), nil
 }

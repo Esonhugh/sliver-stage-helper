@@ -18,6 +18,7 @@ type Client struct {
 	rpcpb.SliverRPCClient
 	rpcpb.SliverRPC_EventsClient
 	eventHandlers map[string]EventHandler
+	log           *log.Entry
 }
 
 func ReadConfig(path string) (*assets.ClientConfig, error) {
@@ -44,6 +45,7 @@ func NewClient(config *assets.ClientConfig) (*Client, error) {
 		SliverRPCClient:        rpc,
 		SliverRPC_EventsClient: eventStream,
 		eventHandlers:          make(map[string]EventHandler),
+		log:                    log.WithField("client", "sliver"),
 	}, nil
 }
 

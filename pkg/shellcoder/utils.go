@@ -21,7 +21,7 @@ func deComment(asm string) string {
 	return final
 }
 
-func prependPayloadSize(payload []byte) []byte {
+func PrependPayloadSize(payload []byte) []byte {
 	payloadSize := uint32(len(payload))
 	lenBuf := make([]byte, 4)
 	binary.LittleEndian.PutUint32(lenBuf, payloadSize)
