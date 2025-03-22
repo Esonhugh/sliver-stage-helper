@@ -18,8 +18,8 @@ var (
 )
 
 func init() {
-	RootCmd.PersistentFlags().IntVarP(&Opts.Verbose, "verbose", "v", 0, "verbose level (-v debug | -vv trace)")
-	RootCmd.PersistentFlags().StringVarP(&Opts.ConfigFilePath, "config", "c", "~/.sliver", "config file path")
+	RootCmd.PersistentFlags().CountVarP(&Opts.Verbose, "verbose", "v", "verbose level (-v debug | -vv trace)")
+	RootCmd.PersistentFlags().StringVarP(&Opts.ConfigFilePath, "config", "c", os.Getenv("SLIVER_CLIENT_CONFIG"), "config file path")
 }
 
 var RootCmd = &cobra.Command{
@@ -39,6 +39,9 @@ var RootCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		_ = cmd.Help()
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		Client.Close()
 	},
 }
 

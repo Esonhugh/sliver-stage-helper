@@ -4,12 +4,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/bishopfox/sliver/client/assets"
-	"github.com/bishopfox/sliver/client/transport"
-	"github.com/bishopfox/sliver/protobuf/clientpb"
-	"github.com/bishopfox/sliver/protobuf/commonpb"
-	"github.com/bishopfox/sliver/protobuf/rpcpb"
+	"github.com/Esonhugh/sliver-stage-helper/pkg/sliverClient/protobuf/clientpb"
+	"github.com/Esonhugh/sliver-stage-helper/pkg/sliverClient/protobuf/commonpb"
+	"github.com/Esonhugh/sliver-stage-helper/pkg/sliverClient/protobuf/rpcpb"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 type EventHandler func(c *Client, event *clientpb.Event) error
@@ -18,21 +17,18 @@ type Client struct {
 	rpcpb.SliverRPCClient
 	rpcpb.SliverRPC_EventsClient
 	eventHandlers map[string]EventHandler
-	log           *log.Entry
+	grpcConn      *grpc.ClientConn
+
+	log *log.Entry
 }
 
-func ReadConfig(path string) (*assets.ClientConfig, error) {
-	return assets.ReadConfig(path)
-}
-
-func NewClient(config *assets.ClientConfig) (*Client, error) {
+func NewClient(config *ClientConfig) (*Client, error) {
 	// connect to the server
-	rpc, ln, err := transport.MTLSConnect(config)
+	rpc, ln, err := MTLSConnect(config)
 	if err != nil {
 		return nil, err
 	}
 	log.Info("[*] Connected to sliver server")
-	defer ln.Close()
 
 	// Open the event stream to be able to collect all events sent by  the server
 	eventStream, err := rpc.Events(context.Background(), &commonpb.Empty{})
@@ -46,6 +42,7 @@ func NewClient(config *assets.ClientConfig) (*Client, error) {
 		SliverRPC_EventsClient: eventStream,
 		eventHandlers:          make(map[string]EventHandler),
 		log:                    log.WithField("client", "sliver"),
+		grpcConn:               ln,
 	}, nil
 }
 
@@ -69,4 +66,9 @@ func (c *Client) startEventHandler() {
 
 func (c *Client) RegisterEventHandler(eventType string, handler EventHandler) {
 	c.eventHandlers[eventType] = handler
+}
+
+func (c *Client) Close() {
+	c.SliverRPC_EventsClient.CloseSend()
+	c.grpcConn.Close()
 }

