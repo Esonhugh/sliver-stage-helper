@@ -30,17 +30,29 @@ var RootCmd = &cobra.Command{
 		SetLogLevel(Opts.Verbose)
 		cfg, err := sliverClient.ReadConfig(Opts.ConfigFilePath)
 		if err != nil {
-			log.Fatalf("can't load sliver config under %v, err: %v", Opts.ConfigFilePath, err)
+			if cmd.Use != "stagerOne" {
+				log.Fatalf("can't load sliver config under %v, err: %v", Opts.ConfigFilePath, err)
+			} else {
+				log.Warnf("can't load sliver config under %v, err: %v", Opts.ConfigFilePath, err)
+				return
+			}
 		}
 		Client, err = sliverClient.NewClient(cfg)
 		if err != nil {
-			log.Fatalf("can't create sliver client, err: %v", err)
+			if cmd.Use != "stagerOne" {
+				log.Fatalf("can't create sliver client, err: %v", err)
+			} else {
+				log.Warnf("can't create sliver client, err: %v", err)
+			}
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		_ = cmd.Help()
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		if Client == nil {
+			return
+		}
 		Client.Close()
 	},
 }
