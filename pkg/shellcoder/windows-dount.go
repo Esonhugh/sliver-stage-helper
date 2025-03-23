@@ -11,7 +11,11 @@ import (
 )
 
 func GenerateWindowsX64ShellcodeFromBytes(payload []byte) ([]byte, error) {
-	return DonutShellcodeFromPE(payload, "amd64", false, "", "", "", false, false, true)
+	p, err := DonutShellcodeFromPE(payload, "amd64", false, "", "", "", false, false, true)
+	if err != nil {
+		return nil, err
+	}
+	return PrependPayloadSize(p), err
 }
 
 // DonutShellcodeFromFile returns a Donut shellcode for the given PE file

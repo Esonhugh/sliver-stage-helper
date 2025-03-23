@@ -33,7 +33,7 @@ func GetEntryAddr(f *os.File) int {
 	if err != nil {
 		log.Fatal(err)
 	}
-	entry := elfFile.Entry - 0x40000
+	entry := elfFile.Entry
 	log.Infof("Found Entry: %v %x", entry, entry)
 	return int(entry)
 }
