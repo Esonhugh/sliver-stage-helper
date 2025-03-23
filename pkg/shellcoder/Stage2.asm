@@ -1,3 +1,4 @@
+.code64
     push rdi                    ; save sockfd
     pop r13
     mov rsi, %v  ; length
