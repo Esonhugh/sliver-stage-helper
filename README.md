@@ -18,7 +18,7 @@ a solution for https://github.com/BishopFox/sliver/issues/1734
 To use the Sliver Stage Helper library in your Go project:
 
 ```bash
-go install github.com/Esonhugh/sliver-stage-helper@latest
+go install github.com/Esonhugh/sliver-stage-helper/cmd/sliverStager@latest
 ```
 
 
