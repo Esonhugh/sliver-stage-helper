@@ -95,7 +95,7 @@ var StartListenCmd = &cobra.Command{
 			}
 			log.Debugf("Got implant profile %s, config: %v", Opt.BeaconProfile, toJson(profile))
 			log.Infof("Start generate a new profile")
-			profile.Name = profile.Name + "-stagered"
+
 			profile.Config.Format = clientpb.OutputFormat_EXECUTABLE
 			profile.Config.ObfuscateSymbols = true
 
